@@ -1,0 +1,4 @@
+---
+fixes:
+  - |
+    Fixes deploying non-public images using the ``ansible`` deploy interface.

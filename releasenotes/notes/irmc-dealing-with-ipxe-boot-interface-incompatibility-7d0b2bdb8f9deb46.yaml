@@ -1,0 +1,10 @@
+---
+upgrade:
+  - |
+    Users of the ``irmc`` hardware type with iPXE should switch to the ``ipxe``
+    boot interface from the deprecated ``[pxe]ipxe_enabled`` option.
+fixes:
+  - |
+    Adds the missing ``ipxe`` boot interface to the ``irmc`` hardware type.
+    It is supposed to be used instead of the deprecated ``[pxe]ipxe_enabled``
+    configuration option.

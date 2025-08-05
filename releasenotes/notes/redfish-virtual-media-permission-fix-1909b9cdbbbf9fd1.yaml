@@ -1,0 +1,15 @@
+---
+upgrade:
+  - |
+    A permission setting has been added for ``redfish-virtual-media`` boot
+    interface, which allows for explicit file permission setting when the
+    driver is used. The default for the new ``[redfish]file_permission
+    setting is ``0u644``, or 644 if manually changed using ``chmod`` on the
+    command line.
+    Operators may need to check ``/httpboot/redfish`` folder permissions if
+    using ``redfish-virtual-media`` if they were running the conductor with
+    a specific ``umask`` to work around the permission setting defect.
+fixes:
+  - |
+    Fixes an issue where the folder ``/httpboot/redfish`` was being created
+    with incorrect permissions.

@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fixes an issue where the port value is not converted to int type
+    when nodes are managed by the ``irmc`` hardware type.

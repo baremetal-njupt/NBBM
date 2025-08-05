@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Fixes an issue where agent heartbeats would be queued if a pre-existing
+    lock was being held for the node which performed a heartbeat operation.
+    The agent heartbeat implementation will no longer retry attempts to
+    acquire an exclusive lock.

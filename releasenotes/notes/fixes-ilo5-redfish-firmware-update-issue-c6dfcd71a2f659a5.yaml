@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes redfish firmware update for ``ilo5`` hardware type by
+    fixing the Redfish task message detection and correctly preparing
+    the ramdisk before rebooting.

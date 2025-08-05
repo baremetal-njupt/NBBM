@@ -1,0 +1,6 @@
+---
+fixes:
+  - Fixes a bug in iLO UEFI iSCSI Boot, where it fails if a server has
+    multiple NIC adapters, since Proliant Servers have a limitation of
+    creating only four iSCSI NIC sources and the existing implementation
+    would try to create for more and failed accordingly.

@@ -1,0 +1,102 @@
+# NOTE(TheJulia): This is a special bindep file which is independent of the
+# project bindep file which is for general usage. This binde pfile is
+# intended for execution from Devstack. 
+# The *primary* purpose being, devstack manages sql dependency mangement
+# and credential setup, so they can't be included here or it is installed
+# prematurely.
+
+# these are needed to run ironic with default ipmitool and (i)PXE boot drivers
+ipmitool [default]
+ipxe [platform:dpkg default]
+ipxe-bootimgs [platform:rpm default]
+socat [default]
+xinetd [default]
+tftpd-hpa [platform:dpkg]
+tftp-server [platform:rpm]
+# Starting with Debian Jessie (and thus in Ubuntu Xenial too),
+# pxelinux package provides the pxelinux.0 boot loader,
+# but such package is absent from Debian Wheezy / Ubuntu Trusty.
+# Make sure syslinux-common is installed for those distros as it provides
+# *.c32 modules for syslinux
+pxelinux [platform:dpkg]
+syslinux
+syslinux-common [platform:dpkg]
+isolinux [platform:dpkg]
+socat [default]
+# Grub2 files for boot loadingusing PXE/GRUB2
+shim-signed [platform:dpkg]
+grub-efi-amd64-signed [platform:dpkg]
+libvirt-daemon [platform:dpkg]
+libvirt-clients [platform:dpkg]
+libvirt [platform:rpm]
+libvirt-dev [platform:dpkg]
+libvirt-devel [platform:rpm]
+qemu [platform:dpkg]
+qemu-kvm [platform:dpkg platform:rpm]
+qemu-utils [platform:dpkg]
+qemu-system-data [platform:dpkg]
+sgabios [platform:rpm]
+ipxe-qemu [platform:dpkg]
+edk2-ovmf [platform:rpm]
+ovmf [platform:dpkg]
+ipxe-roms-qemu [platform:rpm]
+openvswitch [platform:rpm]
+iptables [default]
+net-tools [platform:rpm]
+
+# these are needed to compile Python dependencies from sources
+python-dev [platform:dpkg test]
+python3-all-dev [platform:dpkg !platform:ubuntu-precise test]
+python3-devel [platform:rpm test]
+build-essential [platform:dpkg test]
+libssl-dev [platform:dpkg test]
+libffi-dev [platform:dpkg test]
+libffi-devel [platform:rpm test]
+# these are needed by infra for python-* jobs
+libpq-dev [platform:dpkg test]
+libpq-devel [platform:rpm test]
+postgresql
+postgresql-client [platform:dpkg]
+# postgresql-devel [platform:rpm]
+postgresql-server [platform:rpm]
+mariadb [platform:rpm]
+mariadb-server [platform:rpm]
+# mariadb-devel [platform:rpm]
+dev-db/mariadb [platform:gentoo]
+# gettext and graphviz are needed by doc builds only. For transition,
+# have them in both doc and test.
+# TODO(jaegerandi): Remove test once infra scripts are updated.
+# this is needed for compiling translations
+gettext [test doc]
+# this is needed to build the FSM diagram
+graphviz [!platform:gentoo test doc]
+# libsrvg2 is needed for sphinxcontrib-svg2pdfconverter in docs builds.
+librsvg2-tools [doc platform:rpm]
+librsvg2-bin [doc platform:dpkg]
+# For parsing of API response json
+jq
+dosfstools [platform:dpkg]
+# Metalsmith jobs
+gdisk [platform:dpkg]
+
+# these are needed to build a deploy ramdisk
+
+# NOTE apparmor is an undeclared dependency for docker on ubuntu,
+# see https://github.com/docker/docker/issues/9745
+apparmor [platform:dpkg imagebuild]
+gnupg [imagebuild]
+squashfs-tools [platform:dpkg platform:redhat imagebuild]
+squashfs [platform:suse imagebuild]
+# For custom partition images
+kpartx
+libguestfs0 [platform:dpkg imagebuild]
+libguestfs [platform:rpm imagebuild]
+libguestfs-tools [platform:dpkg]
+python-guestfs [platform:dpkg imagebuild]
+qemu-img [platform:rpm]
+# for TinyIPA build
+wget [imagebuild]
+python-pip [imagebuild]
+unzip [imagebuild]
+sudo [imagebuild]
+gawk [imagebuild]

@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fixes virtual media boot when served using a local HTTP server,
+    i.e. ``[redfish]use_swift`` is ``false``.

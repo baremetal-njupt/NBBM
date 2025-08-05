@@ -1,0 +1,10 @@
+---
+upgrade:
+  - |
+    The ``agent`` RAID interface now removes any root device hint after
+    the RAID configuration is successfully deleted.
+fixes:
+  - |
+    Fixes the issue that root device hint is not removed after the ``agent``
+    RAID interface has successfully deleted RAID configuration. The previous
+    hint is not guranteed to be valid and may cause a deployment failure.

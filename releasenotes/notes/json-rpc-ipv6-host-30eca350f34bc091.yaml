@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    When configured to use JSON RPC, the ``[DEFAULT]host`` configuration
+    option can now be set to an IPv6 address. Previously it could only be
+    an IPv4 address or a DNS name.

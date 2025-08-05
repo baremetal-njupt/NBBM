@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fixes an issue in the discovery playbook for the ``ansible`` deploy
+    interface that prevented gathering WWN and serial numbers under Python 3.

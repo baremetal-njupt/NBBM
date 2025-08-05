@@ -1,0 +1,4 @@
+---
+fixes:
+  - |
+    Fixes inspection with the ``idrac-redfish-virtual-media`` boot interface.

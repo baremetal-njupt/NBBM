@@ -1,0 +1,4 @@
+---
+features:
+  - |
+    The ramdisk log file name now contains the node name when it is set.

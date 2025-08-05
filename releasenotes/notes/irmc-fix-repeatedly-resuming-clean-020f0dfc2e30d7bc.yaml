@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes an issue where cleaning continuously repeats due to the value of
+    ``fgi_status`` not being updated correctly when obtaining the RAID
+    configuration status of nodes managed by the ``irmc`` hardware type.

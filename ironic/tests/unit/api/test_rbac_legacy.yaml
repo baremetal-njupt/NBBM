@@ -1,0 +1,2397 @@
+# NOTE(TheJulia): This file is intended for legacy project RBAC testing
+# and is entirely project scoped in nature. This file will not be used
+# for system scoped testing, which will be kept to separate files to
+# enable the legacy tests to eventually be removed once support
+# for the legacy rules has been removed from Ironic.
+#
+# For more information on the how these tests work, see:
+# doc/source/contributor/rbac-testing.rst
+
+values:
+  skip_reason: "These are fake reference values for YAML templating"
+  # Project scoped admin token
+  admin_headers: &admin_headers
+    X-Auth-Token: 'baremetal-admin-token'
+    X-Project-ID: 66140b35c7524c6da836ca834e3fd3f9
+    X-Roles: baremetal_admin
+    X-Project-Name: baremetal
+  # Project scoped other member token.
+  member_headers: &member_headers
+    X-Auth-Token: 'baremetal-member-token'
+    X-Project-ID: 66140b35c7524c6da836ca834e3fd3f9
+    X-Roles: member
+    X-Project-Name: baremetal
+  # Project scoped Observer Token
+  observer_headers: &observer_headers
+    X-Auth-Token: 'baremetal-observer-token'
+    X-Project-ID: 66140b35c7524c6da836ca834e3fd3f9
+    X-Project-Name: baremetal
+    X-Roles: baremetal_observer
+  other_admin_headers: &other_admin_headers
+    X-Auth-Token: 'other-admin-token'
+    X-Project-ID: a1111111111111111111111111111111
+    X-Roles: admin,member,reader
+    X-Project-Name: 'other-project'
+  owner_project_id: &owner_project_id '{owner_project_id}'
+  other_project_id: &other_project_id '{other_project_id}'
+  node_ident: &node_ident '{node_ident}'
+
+# Nodes - https://docs.openstack.org/api-ref/baremetal/?expanded=#nodes-nodes
+
+nodes_post_admin:
+  path: '/v1/nodes'
+  method: post
+  headers: *admin_headers
+  body: &node_post_body
+    name: node
+    driver: fake-driverz
+  assert_status: 503
+  deprecated: true
+
+nodes_post_member:
+  path: '/v1/nodes'
+  method: post
+  headers: *member_headers
+  body: *node_post_body
+  assert_status: 403
+  deprecated: true
+
+nodes_post_observer:
+  path: '/v1/nodes'
+  method: post
+  headers: *observer_headers
+  body: *node_post_body
+  assert_status: 403
+  deprecated: true
+
+nodes_get_node_admin:
+  path: '/v1/nodes/{node_ident}'
+  method: get
+  headers: *admin_headers
+  assert_dict_contains:
+    uuid: '{node_ident}'
+    driver: 'fake-driverz'
+  assert_status: 200
+  deprecated: true
+
+nodes_get_node_member:
+  path: '/v1/nodes/{node_ident}'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_get_node_observer:
+  path: '/v1/nodes/{node_ident}'
+  method: get
+  headers: *observer_headers
+  assert_dict_contains:
+    uuid: '{node_ident}'
+    driver: 'fake-driverz'
+  assert_status: 200
+  deprecated: true
+
+nodes_get_node_other_admin:
+  path: '/v1/nodes/{node_ident}'
+  method: get
+  headers: *other_admin_headers
+  # FIXME(TheJulia): So this is not great, but it is default for now
+  # And MUST be changed moving forward, just not in this patch.
+  # This just represents the *current* state, not what the world should be
+  # in the end.
+  assert_status: 200
+  deprecated: true
+
+nodes_get_admin:
+  path: '/v1/nodes'
+  method: get
+  headers: *admin_headers
+  assert_list_length:
+    nodes: 3
+  assert_status: 200
+  deprecated: true
+
+nodes_get_other_admin:
+  path: '/v1/nodes'
+  method: get
+  headers: *other_admin_headers
+  assert_list_length:
+    nodes: 3
+  assert_status: 200
+  deprecated: true
+
+nodes_detail_get_admin:
+  path: '/v1/nodes/detail'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_detail_get_member:
+  path: '/v1/nodes/detail'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+nodes_detail_get_observer:
+  path: '/v1/nodes/detail'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_node_ident_get_admin:
+  path: '/v1/nodes/{node_ident}'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_node_ident_get_member:
+  path: '/v1/nodes/{node_ident}'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_node_ident_get_observer:
+  path: '/v1/nodes/{node_ident}'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_node_ident_patch_admin:
+  path: '/v1/nodes/{node_ident}'
+  method: patch
+  headers: *admin_headers
+  body: &extra_patch
+    - op: replace
+      path: /extra
+      value: {'test': 'testing'}
+  assert_status: 503
+  deprecated: true
+
+nodes_node_ident_patch_member:
+  path: '/v1/nodes/{node_ident}'
+  method: patch
+  headers: *member_headers
+  body: *extra_patch
+  assert_status: 404
+  deprecated: true
+
+nodes_node_ident_patch_observer:
+  path: '/v1/nodes/{node_ident}'
+  method: patch
+  headers: *observer_headers
+  body: *extra_patch
+  assert_status: 403
+  deprecated: true
+
+nodes_node_ident_delete_admin:
+  path: '/v1/nodes/{node_ident}'
+  method: delete
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_node_ident_delete_member:
+  path: '/v1/nodes/{node_ident}'
+  method: delete
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_node_ident_delete_observer:
+  path: '/v1/nodes/{node_ident}'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+# Node Management - https://docs.openstack.org/api-ref/baremetal/?expanded=#node-management-nodes
+
+nodes_validate_get_admin:
+  path: '/v1/nodes/{node_ident}/validate'
+  method: get
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_validate_get_member:
+  path: '/v1/nodes/{node_ident}/validate'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_validate_get_observer:
+  path: '/v1/nodes/{node_ident}/validate'
+  method: get
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+nodes_maintenance_put_admin:
+  path: '/v1/nodes/{node_ident}/maintenance'
+  method: put
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_maintenance_put_member:
+  path: '/v1/nodes/{node_ident}/maintenance'
+  method: put
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_maintenance_put_observer:
+  path: '/v1/nodes/{node_ident}/maintenance'
+  method: put
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+nodes_maintenance_delete_admin:
+  path: '/v1/nodes/{node_ident}/maintenance'
+  method: delete
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_maintenance_delete_member:
+  path: '/v1/nodes/{node_ident}/maintenance'
+  method: delete
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_maintenance_delete_observer:
+  path: '/v1/nodes/{node_ident}/maintenance'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+nodes_management_boot_device_put_admin:
+  path: '/v1/nodes/{node_ident}/management/boot_device'
+  method: put
+  headers: *admin_headers
+  body: &boot_device_body
+    boot_device: pxe
+  assert_status: 503
+  deprecated: true
+
+nodes_management_boot_device_put_member:
+  path: '/v1/nodes/{node_ident}/management/boot_device'
+  method: put
+  headers: *member_headers
+  body: *boot_device_body
+  assert_status: 404
+  deprecated: true
+
+nodes_management_boot_device_put_observer:
+  path: '/v1/nodes/{node_ident}/management/boot_device'
+  method: put
+  headers: *observer_headers
+  body: *boot_device_body
+  assert_status: 403
+  deprecated: true
+
+nodes_management_boot_device_get_admin:
+  path: '/v1/nodes/{node_ident}/management/boot_device'
+  method: get
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_management_boot_device_get_member:
+  path: '/v1/nodes/{node_ident}/management/boot_device'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_management_boot_device_get_observer:
+  path: '/v1/nodes/{node_ident}/management/boot_device'
+  method: get
+  headers: *observer_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_management_boot_device_supported_get_admin:
+  path: '/v1/nodes/{node_ident}/management/boot_device/supported'
+  method: get
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_management_boot_device_supported_get_member:
+  path: '/v1/nodes/{node_ident}/management/boot_device/supported'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_management_boot_device_supported_get_observer:
+  path: '/v1/nodes/{node_ident}/management/boot_device/supported'
+  method: get
+  headers: *observer_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_management_inject_nmi_put_admin:
+  path: '/v1/nodes/{node_ident}/management/inject_nmi'
+  method: put
+  headers: *admin_headers
+  body: {}
+  assert_status: 503
+  deprecated: true
+
+nodes_management_inject_nmi_put_member:
+  path: '/v1/nodes/{node_ident}/management/inject_nmi'
+  method: put
+  headers: *member_headers
+  body: {}
+  assert_status: 404
+  deprecated: true
+
+nodes_management_inject_nmi_put_observer:
+  path: '/v1/nodes/{node_ident}/management/inject_nmi'
+  method: put
+  headers: *observer_headers
+  body: {}
+  assert_status: 403
+  deprecated: true
+
+nodes_states_get_admin:
+  path: '/v1/nodes/{node_ident}/states'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_states_get_member:
+  path: '/v1/nodes/{node_ident}/states'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_states_get_observer:
+  path: '/v1/nodes/{node_ident}/states'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_states_power_put_admin:
+  path: '/v1/nodes/{node_ident}/states/power'
+  method: put
+  headers: *admin_headers
+  body: &power_body
+    target: "power on"
+  assert_status: 503
+  deprecated: true
+
+nodes_states_power_put_member:
+  path: '/v1/nodes/{node_ident}/states/power'
+  method: put
+  headers: *member_headers
+  body: *power_body
+  assert_status: 404
+  deprecated: true
+
+nodes_states_power_put_observer:
+  path: '/v1/nodes/{node_ident}/states/power'
+  method: put
+  headers: *observer_headers
+  body: *power_body
+  assert_status: 403
+  deprecated: true
+
+nodes_states_boot_mode_put_admin:
+  path: '/v1/nodes/{node_ident}/states/boot_mode'
+  method: put
+  headers: *admin_headers
+  body: &boot_mode_body
+    target: "uefi"
+  assert_status: 503
+  deprecated: true
+
+nodes_states_boot_mode_put_member:
+  path: '/v1/nodes/{node_ident}/states/boot_mode'
+  method: put
+  headers: *member_headers
+  body: *boot_mode_body
+  assert_status: 404
+  deprecated: true
+
+nodes_states_boot_mode_put_observer:
+  path: '/v1/nodes/{node_ident}/states/boot_mode'
+  method: put
+  headers: *observer_headers
+  body: *boot_mode_body
+  assert_status: 403
+  deprecated: true
+
+nodes_states_secure_boot_put_admin:
+  path: '/v1/nodes/{node_ident}/states/secure_boot'
+  method: put
+  headers: *admin_headers
+  body: &secure_boot_body
+    target: "true"
+  assert_status: 503
+  deprecated: true
+
+nodes_states_secure_boot_put_member:
+  path: '/v1/nodes/{node_ident}/states/secure_boot'
+  method: put
+  headers: *member_headers
+  body: *secure_boot_body
+  assert_status: 404
+  deprecated: true
+
+nodes_states_secure_boot_put_observer:
+  path: '/v1/nodes/{node_ident}/states/secure_boot'
+  method: put
+  headers: *observer_headers
+  body: *secure_boot_body
+  assert_status: 403
+  deprecated: true
+
+nodes_states_provision_put_admin:
+  path: '/v1/nodes/{node_ident}/states/provision'
+  method: put
+  headers: *admin_headers
+  body: &provision_body
+    target: deploy
+  assert_status: 503
+  deprecated: true
+
+nodes_states_provision_put_member:
+  path: '/v1/nodes/{node_ident}/states/provision'
+  method: put
+  headers: *member_headers
+  body: *provision_body
+  assert_status: 404
+  deprecated: true
+
+nodes_states_provision_put_observer:
+  path: '/v1/nodes/{node_ident}/states/provision'
+  method: put
+  headers: *observer_headers
+  body: *provision_body
+  assert_status: 403
+  deprecated: true
+
+nodes_states_raid_put_admin:
+  path: '/v1/nodes/{node_ident}/states/raid'
+  method: put
+  headers: *admin_headers
+  body: &raid_body
+    target_raid_config:
+      logical_disks:
+        - size_gb: 500
+          is_root_volume: true
+          raid_level: 1
+  assert_status: 503
+  deprecated: true
+
+nodes_states_raid_put_member:
+  path: '/v1/nodes/{node_ident}/states/raid'
+  method: put
+  headers: *member_headers
+  body: *raid_body
+  assert_status: 404
+  deprecated: true
+
+nodes_states_raid_put_observer:
+  path: '/v1/nodes/{node_ident}/states/raid'
+  method: put
+  headers: *observer_headers
+  body: *raid_body
+  assert_status: 403
+  deprecated: true
+
+nodes_states_console_get_admin:
+  path: '/v1/nodes/{node_ident}/states/console'
+  method: get
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_states_console_get_member:
+  path: '/v1/nodes/{node_ident}/states/console'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_states_console_get_admin:
+  path: '/v1/nodes/{node_ident}/states/console'
+  method: get
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+nodes_states_console_put_admin:
+  path: '/v1/nodes/{node_ident}/states/console'
+  method: put
+  headers: *admin_headers
+  body: &console_body_put
+    enabled: true
+  assert_status: 503
+  deprecated: true
+
+nodes_states_console_put_member:
+  path: '/v1/nodes/{node_ident}/states/console'
+  method: put
+  headers: *member_headers
+  body: *console_body_put
+  assert_status: 404
+  deprecated: true
+
+nodes_states_console_put_observer:
+  path: '/v1/nodes/{node_ident}/states/console'
+  method: put
+  headers: *observer_headers
+  body: *console_body_put
+  assert_status: 403
+  deprecated: true
+
+# Node Vendor Passthrough - https://docs.openstack.org/api-ref/baremetal/?expanded=#node-vendor-passthru-nodes
+
+# Calls conductor upon the get as a task is required.
+nodes_vendor_passthru_methods_get_admin:
+  path: '/v1/nodes/{node_ident}/vendor_passthru/methods'
+  method: get
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_vendor_passthru_methods_get_member:
+  path: '/v1/nodes/{node_ident}/vendor_passthru/methods'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_vendor_passthru_methods_get_observer:
+  path: '/v1/nodes/{node_ident}/vendor_passthru/methods'
+  method: get
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+nodes_vendor_passthru_get_admin:
+  path: '/v1/nodes/{node_ident}/vendor_passthru?method=test'
+  method: get
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_vendor_passthru_get_member:
+  path: '/v1/nodes/{node_ident}/vendor_passthru?method=test'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_vendor_passthru_get_observer:
+  path: '/v1/nodes/{node_ident}/vendor_passthru?method=test'
+  method: get
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+nodes_vendor_passthru_post_admin:
+  path: '/v1/nodes/{node_ident}/vendor_passthru?method=test'
+  method: post
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_vendor_passthru_post_member:
+  path: '/v1/nodes/{node_ident}/vendor_passthru?method=test'
+  method: post
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_vendor_passthru_post_observer:
+  path: '/v1/nodes/{node_ident}/vendor_passthru?method=test'
+  method: post
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+nodes_vendor_passthru_put_admin:
+  path: '/v1/nodes/{node_ident}/vendor_passthru?method=test'
+  method: put
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_vendor_passthru_put_member:
+  path: '/v1/nodes/{node_ident}/vendor_passthru?method=test'
+  method: put
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_vendor_passthru_put_observer:
+  path: '/v1/nodes/{node_ident}/vendor_passthru?method=test'
+  method: put
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+nodes_vendor_passthru_delete_admin:
+  path: '/v1/nodes/{node_ident}/vendor_passthru?method=test'
+  method: delete
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_vendor_passthru_delete_member:
+  path: '/v1/nodes/{node_ident}/vendor_passthru?method=test'
+  method: delete
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_vendor_passthru_delete_observer:
+  path: '/v1/nodes/{node_ident}/vendor_passthru?method=test'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+# Node Traits - https://docs.openstack.org/api-ref/baremetal/#node-traits-nodes
+
+nodes_traits_get_admin:
+  path: '/v1/nodes/{node_ident}/traits'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_traits_get_member:
+  path: '/v1/nodes/{node_ident}/traits'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_traits_get_observer:
+  path: '/v1/nodes/{node_ident}/traits'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_traits_put_admin:
+  path: '/v1/nodes/{node_ident}/traits'
+  method: put
+  headers: *admin_headers
+  assert_status: 503
+  body: &traits_body
+    traits:
+      - CUSTOM_TRAIT1
+      - HW_CPU_X86_VMX
+  deprecated: true
+
+nodes_traits_put_member:
+  path: '/v1/nodes/{node_ident}/traits'
+  method: put
+  headers: *member_headers
+  assert_status: 404
+  body: *traits_body
+  deprecated: true
+
+nodes_traits_put_observer:
+  path: '/v1/nodes/{node_ident}/traits'
+  method: put
+  headers: *observer_headers
+  assert_status: 403
+  body: *traits_body
+  deprecated: true
+
+nodes_traits_delete_admin:
+  path: '/v1/nodes/{node_ident}/traits/{trait}'
+  method: delete
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_traits_delete_member:
+  path: '/v1/nodes/{node_ident}/traits/{trait}'
+  method: delete
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_traits_delete_observer:
+  path: '/v1/nodes/{node_ident}/traits/{trait}'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+nodes_traits_trait_put_admin:
+  path: '/v1/nodes/{node_ident}/traits/CUSTOM_TRAIT2'
+  method: put
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_traits_trait_put_member:
+  path: '/v1/nodes/{node_ident}/traits/CUSTOM_TRAIT2'
+  method: put
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_traits_trait_put_observer:
+  path: '/v1/nodes/{node_ident}/traits/CUSTOM_TRAIT2'
+  method: put
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+nodes_traits_trait_delete_admin:
+  path: '/v1/nodes/{node_ident}/traits/{trait}'
+  method: delete
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_traits_trait_delete_member:
+  path: '/v1/nodes/{node_ident}/traits/{trait}'
+  method: delete
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_traits_trait_delete_observer:
+  path: '/v1/nodes/{node_ident}/traits/{trait}'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+# VIFS - https://docs.openstack.org/api-ref/baremetal/#vifs-virtual-interfaces-of-nodes
+# TODO(TheJulia): VIFS will need fairly exhaustive testing given the use path.
+# i.e. ensure user has rights to a vif and all.
+
+# Apparently the get operation hits the conductor?!?
+# With mocked conductor 503 is returned.
+nodes_vifs_get_admin:
+  path: '/v1/nodes/{node_ident}/vifs'
+  method: get
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_vifs_get_member:
+  path: '/v1/nodes/{node_ident}/vifs'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_vifs_get_observer:
+  path: '/v1/nodes/{node_ident}/vifs'
+  method: get
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+nodes_vifs_post_admin:
+  path: '/v1/nodes/{node_ident}/vifs'
+  method: post
+  headers: *admin_headers
+  assert_status: 503
+  body: &vif_body
+    id: ee21d58f-5de2-4956-85ff-33935ea1ca00
+  deprecated: true
+
+nodes_vifs_post_member:
+  path: '/v1/nodes/{node_ident}/vifs'
+  method: post
+  headers: *member_headers
+  assert_status: 404
+  body: *vif_body
+  deprecated: true
+
+nodes_vifs_post_observer:
+  path: '/v1/nodes/{node_ident}/vifs'
+  method: post
+  headers: *observer_headers
+  assert_status: 403
+  body: *vif_body
+  deprecated: true
+
+# This calls the conductor, hence not status 403.
+nodes_vifs_node_vif_ident_delete_admin:
+  path: '/v1/nodes/{node_ident}/vifs/{vif_ident}'
+  method: delete
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_vifs_node_vif_ident_delete_member:
+  path: '/v1/nodes/{node_ident}/vifs/{vif_ident}'
+  method: delete
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_vifs_node_vif_ident_delete_observer:
+  path: '/v1/nodes/{node_ident}/vifs/{vif_ident}'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+# Indicators - https://docs.openstack.org/api-ref/baremetal/#indicators-management
+
+nodes_management_indicators_get_admin:
+  path: '/v1/nodes/{node_ident}/management/indicators'
+  method: get
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_management_indicators_get_member:
+  path: '/v1/nodes/{node_ident}/management/indicators'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_management_indicators_get_observer:
+  path: '/v1/nodes/{node_ident}/management/indicators'
+  method: get
+  headers: *observer_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_management_indicators_component_get_allow:
+  path: '/v1/nodes/{node_ident}/management/indicators/{component}'
+  method: get
+  skip_reason: API appears to be broken and should be patched outside of this work.
+
+nodes_management_indicators_component_ind_ident_get_allow:
+  path: '/v1/nodes/{node_ident}/management/indicators/{component}/{ind_ident}'
+  method: get
+  skip_reason: API appears to be broken and should be patched outside of this work.
+
+nodes_management_indicators_component_ind_ident_put_allow:
+  path: '/v1/nodes/{node_ident}/management/indicators/{component}/{ind_ident}'
+  method: put
+  skip_reason: API appears to be broken and should be patched outside of this work.
+
+# Portgroups -  https://docs.openstack.org/api-ref/baremetal/#portgroups-portgroups
+
+portgroups_get_admin:
+  path: '/v1/portgroups'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+portgroups_get_member:
+  path: '/v1/portgroups'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+portgroups_get_observer:
+  path: '/v1/portgroups'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+# Returns 400 as the node uuid cannot be found, but
+# it is past the access controls.
+portgroups_post_admin:
+  path: '/v1/portgroups'
+  method: post
+  headers: *admin_headers
+  body: &portgroup_body
+    node_uuid: 18a552fb-dcd2-43bf-9302-e4c93287be11
+  assert_status: 201
+  deprecated: true
+
+portgroups_post_member:
+  path: '/v1/portgroups'
+  method: post
+  headers: *member_headers
+  body: *portgroup_body
+  assert_status: 403
+  deprecated: true
+
+portgroups_post_observer:
+  path: '/v1/portgroups'
+  method: post
+  headers: *observer_headers
+  body: *portgroup_body
+  assert_status: 403
+  deprecated: true
+
+portgroups_detail_get_admin:
+  path: '/v1/portgroups/detail'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+portgroups_detail_get_member:
+  path: '/v1/portgroups/detail'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+portgroups_detail_get_observer:
+  path: '/v1/portgroups/detail'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+portgroups_portgroup_ident_get_admin:
+  path: '/v1/portgroups/{portgroup_ident}'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+portgroups_portgroup_ident_get_member:
+  path: '/v1/portgroups/{portgroup_ident}'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+portgroups_portgroup_ident_get_observer:
+  path: '/v1/portgroups/{portgroup_ident}'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+portgroups_portgroup_ident_patch_admin:
+  path: '/v1/portgroups/{portgroup_ident}'
+  method: patch
+  headers: *admin_headers
+  body: &portgroup_patch_body
+    - op: replace
+      path: /extra
+      value: {'test': 'testing'}
+  assert_status: 503
+  deprecated: true
+
+portgroups_portgroup_ident_patch_member:
+  path: '/v1/portgroups/{portgroup_ident}'
+  method: patch
+  headers: *member_headers
+  body: *portgroup_patch_body
+  assert_status: 404
+  deprecated: true
+
+portgroups_portgroup_ident_patch_observer:
+  path: '/v1/portgroups/{portgroup_ident}'
+  method: patch
+  headers: *observer_headers
+  body: *portgroup_patch_body
+  assert_status: 403
+  deprecated: true
+
+portgroups_portgroup_ident_delete_admin:
+  path: '/v1/portgroups/{portgroup_ident}'
+  method: delete
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+portgroups_portgroup_ident_delete_member:
+  path: '/v1/portgroups/{portgroup_ident}'
+  method: delete
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+portgroups_portgroup_ident_delete_observer:
+  path: '/v1/portgroups/{portgroup_ident}'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+# Portgroups by node - https://docs.openstack.org/api-ref/baremetal/#listing-portgroups-by-node-nodes-portgroups
+
+nodes_portgroups_get_admin:
+  path: '/v1/nodes/{node_ident}/portgroups'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_portgroups_get_member:
+  path: '/v1/nodes/{node_ident}/portgroups'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_portgroups_get_observer:
+  path: '/v1/nodes/{node_ident}/portgroups'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_portgroups_detail_get_admin:
+  path: '/v1/nodes/{node_ident}/portgroups/detail'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_portgroups_detail_get_member:
+  path: '/v1/nodes/{node_ident}/portgroups/detail'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_portgroups_detail_get_observer:
+  path: '/v1/nodes/{node_ident}/portgroups/detail'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+# Ports - https://docs.openstack.org/api-ref/baremetal/#ports-ports
+
+ports_get_admin:
+  path: '/v1/ports'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+ports_get_member:
+  path: '/v1/ports'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+ports_get_observer:
+  path: '/v1/ports'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+# NOTE(TheJulia): Returns 400 when the conductor calls are
+# mocked indicating node lookup failed, which means the access
+# check was successful.
+ports_post_admin:
+  path: '/v1/ports'
+  method: post
+  headers: *admin_headers
+  assert_status: 400
+  body: &port_body
+    node_uuid: 68a552fb-dcd2-43bf-9302-e4c93287be16
+    address: 00:01:02:03:04:05
+  deprecated: true
+
+ports_post_member:
+  path: '/v1/ports'
+  method: post
+  headers: *member_headers
+  assert_status: 403
+  body: *port_body
+  deprecated: true
+
+ports_post_observer:
+  path: '/v1/ports'
+  method: post
+  headers: *observer_headers
+  assert_status: 403
+  body: *port_body
+  deprecated: true
+
+ports_detail_get_admin:
+  path: '/v1/ports/detail'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+ports_detail_get_member:
+  path: '/v1/ports/detail'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+ports_detail_get_observer:
+  path: '/v1/ports/detail'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+ports_port_id_get_admin:
+  path: '/v1/ports/{port_ident}'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+ports_port_id_get_member:
+  path: '/v1/ports/{port_ident}'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+ports_port_id_get_observer:
+  path: '/v1/ports/{port_ident}'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+ports_port_id_patch_admin:
+  path: '/v1/ports/{port_ident}'
+  method: patch
+  headers: *admin_headers
+  assert_status: 503
+  body: &port_patch_body
+    - op: replace
+      path: /extra
+      value: {'test': 'testing'}
+  deprecated: true
+
+ports_port_id_patch_member:
+  path: '/v1/ports/{port_ident}'
+  method: patch
+  headers: *member_headers
+  assert_status: 404
+  body: *port_patch_body
+  deprecated: true
+
+ports_port_id_patch_observer:
+  path: '/v1/ports/{port_ident}'
+  method: patch
+  headers: *observer_headers
+  assert_status: 403
+  body: *port_patch_body
+  deprecated: true
+
+ports_port_id_delete_admin:
+  path: '/v1/ports/{port_ident}'
+  method: delete
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+ports_port_id_delete_member:
+  path: '/v1/ports/{port_ident}'
+  method: delete
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+ports_port_id_delete_observer:
+  path: '/v1/ports/{port_ident}'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+# Ports by node - https://docs.openstack.org/api-ref/baremetal/#listing-ports-by-node-nodes-ports
+
+nodes_ports_get_admin:
+  path: '/v1/nodes/{node_ident}/ports'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_ports_get_member:
+  path: '/v1/nodes/{node_ident}/ports'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_ports_get_observer:
+  path: '/v1/nodes/{node_ident}/ports'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_ports_detail_get_admin:
+  path: '/v1/nodes/{node_ident}/ports/detail'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_ports_detail_get_member:
+  path: '/v1/nodes/{node_ident}/ports/detail'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_ports_detail_get_observer:
+  path: '/v1/nodes/{node_ident}/ports/detail'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+# Ports by portgroup - https://docs.openstack.org/api-ref/baremetal/#listing-ports-by-portgroup-portgroup-ports
+
+portgroups_ports_get_admin:
+  path: '/v1/portgroups/{portgroup_ident}/ports'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+portgroups_ports_get_member:
+  path: '/v1/portgroups/{portgroup_ident}/ports'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+portgroups_ports_get_observer:
+  path: '/v1/portgroups/{portgroup_ident}/ports'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+portgroups_ports_detail_get_admin:
+  path: '/v1/portgroups/{portgroup_ident}/ports/detail'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+portgroups_ports_detail_get_member:
+  path: '/v1/portgroups/{portgroup_ident}/ports/detail'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+portgroups_ports_detail_get_observer:
+  path: '/v1/portgroups/{portgroup_ident}/ports/detail'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+
+# Volume(s) - https://docs.openstack.org/api-ref/baremetal/#volume-volume
+# TODO(TheJulia): volumes will likely need some level of exhaustive testing.
+# i.e. ensure that the volume is permissible. However this may not be possible
+# here.
+
+volume_get_admin:
+  path: '/v1/volume'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+volume_get_member:
+  path: '/v1/volume'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+volume_get_observer:
+  path: '/v1/volume'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+# Volume connectors
+
+volume_connectors_get_admin:
+  path: '/v1/volume/connectors'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+volume_connectors_get_member:
+  path: '/v1/volume/connectors'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+volume_connectors_get_observer:
+  path: '/v1/volume/connectors'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+# NOTE(TheJulia): This ends up returning a 400 due to the
+# UUID not already being in ironic.
+volume_connectors_post_admin:
+  path: '/v1/volume/connectors'
+  method: post
+  headers: *admin_headers
+  assert_status: 201
+  body: &volume_connector_body
+    node_uuid: 1be26c0b-03f2-4d2e-ae87-c02d7f33c123
+    type: ip
+    connector_id: 192.168.1.100
+  deprecated: true
+
+volume_connectors_post_member:
+  path: '/v1/volume/connectors'
+  method: post
+  headers: *member_headers
+  assert_status: 403
+  body: *volume_connector_body
+  deprecated: true
+
+volume_connectors_post_observer:
+  path: '/v1/volume/connectors'
+  method: post
+  headers: *observer_headers
+  assert_status: 403
+  body: *volume_connector_body
+  deprecated: true
+
+volume_volume_connector_id_get_admin:
+  path: '/v1/volume/connectors/{volume_connector_ident}'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+volume_volume_connector_id_get_member:
+  path: '/v1/volume/connectors/{volume_connector_ident}'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+volume_volume_connector_id_get_observer:
+  path: '/v1/volume/connectors/{volume_connector_ident}'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+volume_volume_connector_id_patch_admin:
+  path: '/v1/volume/connectors/{volume_connector_ident}'
+  method: patch
+  headers: *admin_headers
+  body: &connector_patch_body
+    - op: replace
+      path: /extra
+      value: {'test': 'testing'}
+  assert_status: 503
+  deprecated: true
+
+volume_volume_connector_id_patch_member:
+  path: '/v1/volume/connectors/{volume_connector_ident}'
+  method: patch
+  headers: *member_headers
+  body: *connector_patch_body
+  assert_status: 404
+  deprecated: true
+
+volume_volume_connector_id_patch_observer:
+  path: '/v1/volume/connectors/{volume_connector_ident}'
+  method: patch
+  headers: *observer_headers
+  body: *connector_patch_body
+  assert_status: 403
+  deprecated: true
+
+volume_volume_connector_id_delete_admin:
+  path: '/v1/volume/connectors/{volume_connector_ident}'
+  method: delete
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+volume_volume_connector_id_delete_member:
+  path: '/v1/volume/connectors/{volume_connector_ident}'
+  method: delete
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+volume_volume_connector_id_delete_observer:
+  path: '/v1/volume/connectors/{volume_connector_ident}'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+# Volume targets
+
+volume_targets_get_admin:
+  path: '/v1/volume/targets'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+volume_targets_get_member:
+  path: '/v1/volume/targets'
+  method: get
+  headers: *member_headers
+  deprecated: true
+  assert_status: 403
+
+volume_targets_get_observer:
+  path: '/v1/volume/targets'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+# NOTE(TheJulia): Because we can't seem to get the uuid
+# to load from an existing uuid, since we're not subsituting
+# it, this will return with 400 due to the ID not matching.
+volume_targets_post_admin:
+  path: '/v1/volume/targets'
+  method: post
+  headers: *admin_headers
+  assert_status: 201
+  body: &volume_target_body
+    node_uuid: 1be26c0b-03f2-4d2e-ae87-c02d7f33c123
+    volume_type: iscsi
+    boot_index: 4
+    volume_id: 'test-id'
+  deprecated: true
+
+volume_targets_post_member:
+  path: '/v1/volume/targets'
+  method: post
+  headers: *member_headers
+  assert_status: 403
+  body: *volume_target_body
+  deprecated: true
+
+volume_targets_post_observer:
+  path: '/v1/volume/targets'
+  method: post
+  headers: *observer_headers
+  assert_status: 403
+  body: *volume_target_body
+  deprecated: true
+
+volume_volume_target_id_get_admin:
+  path: '/v1/volume/targets/{volume_target_ident}'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+volume_volume_target_id_get_member:
+  path: '/v1/volume/targets/{volume_target_ident}'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+volume_volume_target_id_get_observer:
+  path: '/v1/volume/targets/{volume_target_ident}'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+volume_volume_target_id_patch_admin:
+  path: '/v1/volume/targets/{volume_target_ident}'
+  method: patch
+  body: &volume_target_patch
+    - op: replace
+      path: /extra
+      value: {'test': 'testing'}
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+volume_volume_target_id_patch_member:
+  path: '/v1/volume/targets/{volume_target_ident}'
+  method: patch
+  body: *volume_target_patch
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+volume_volume_target_id_patch_observer:
+  path: '/v1/volume/targets/{volume_target_ident}'
+  method: patch
+  body: *volume_target_patch
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+volume_volume_target_id_delete_admin:
+  path: '/v1/volume/targets/{volume_target_ident}'
+  method: delete
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+volume_volume_target_id_delete_member:
+  path: '/v1/volume/targets/{volume_target_ident}'
+  method: delete
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+volume_volume_target_id_delete_observer:
+  path: '/v1/volume/targets/{volume_target_ident}'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+# Get Volumes by Node - https://docs.openstack.org/api-ref/baremetal/#listing-volume-resources-by-node-nodes-volume
+
+nodes_volume_get_admin:
+  path: '/v1/nodes/{node_ident}/volume'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_volume_get_member:
+  path: '/v1/nodes/{node_ident}/volume'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+nodes_volume_get_observer:
+  path: '/v1/nodes/{node_ident}/volume'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_volume_connectors_get_admin:
+  path: '/v1/nodes/{node_ident}/volume/connectors'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_volume_connectors_get_member:
+  path: '/v1/nodes/{node_ident}/volume/connectors'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_volume_connectors_get_observer:
+  path: '/v1/nodes/{node_ident}/volume/connectors'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_volume_targets_get_admin:
+  path: '/v1/nodes/{node_ident}/volume/targets'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_volume_targets_get_member:
+  path: '/v1/nodes/{node_ident}/volume/targets'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_volume_targets_get_observer:
+  path: '/v1/nodes/{node_ident}/volume/targets'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+# Drivers - https://docs.openstack.org/api-ref/baremetal/#drivers-drivers
+
+drivers_get_admin:
+  path: '/v1/drivers'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+drivers_get_member:
+  path: '/v1/drivers'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+drivers_get_observer:
+  path: '/v1/drivers'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+drivers_driver_name_get_admin:
+  path: '/v1/drivers/{driver_name}'
+  method: get
+  headers: *admin_headers
+  assert_status: 404
+  deprecated: true
+
+drivers_driver_name_get_member:
+  path: '/v1/drivers/{driver_name}'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+drivers_driver_name_get_observer:
+  path: '/v1/drivers/{driver_name}'
+  method: get
+  headers: *observer_headers
+  assert_status: 404
+  deprecated: true
+
+drivers_properties_get_admin:
+  path: '/v1/drivers/{driver_name}/properties'
+  method: get
+  headers: *admin_headers
+  assert_status: 404
+  deprecated: true
+
+drivers_properties_get_member:
+  path: '/v1/drivers/{driver_name}/properties'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+drivers_properties_get_observer:
+  path: '/v1/drivers/{driver_name}/properties'
+  method: get
+  headers: *observer_headers
+  assert_status: 404
+  deprecated: true
+
+drivers_raid_logical_disk_properties_get_admin:
+  path: '/v1/drivers/{driver_name}/raid/logical_disk_properties'
+  method: get
+  headers: *admin_headers
+  assert_status: 404
+  deprecated: true
+
+drivers_raid_logical_disk_properties_get_member:
+  path: '/v1/drivers/{driver_name}/raid/logical_disk_properties'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+drivers_raid_logical_disk_properties_get_observer:
+  path: '/v1/drivers/{driver_name}/raid/logical_disk_properties'
+  method: get
+  headers: *observer_headers
+  assert_status: 404
+  deprecated: true
+
+# Driver vendor passthru - https://docs.openstack.org/api-ref/baremetal/#driver-vendor-passthru-drivers
+
+drivers_vendor_passthru_methods_get_admin:
+  path: '/v1/drivers/{driver_name}/vendor_passthru/methods'
+  method: get
+  headers: *admin_headers
+  assert_status: 404
+  deprecated: true
+
+drivers_vendor_passthru_methods_get_member:
+  path: '/v1/drivers/{driver_name}/vendor_passthru/methods'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+drivers_vendor_passthru_methods_get_observer:
+  path: '/v1/drivers/{driver_name}/vendor_passthru/methods'
+  method: get
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+drivers_vendor_passthru_get_admin:
+  path: '/v1/drivers/{driver_name}/vendor_passthru?method=test'
+  method: get
+  headers: *admin_headers
+  assert_status: 404
+  deprecated: true
+
+drivers_vendor_passthru_get_member:
+  path: '/v1/drivers/{driver_name}/vendor_passthru?method=test'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+drivers_vendor_passthru_get_observer:
+  path: '/v1/drivers/{driver_name}/vendor_passthru?method=test'
+  method: get
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+drivers_vendor_passthru_post_admin:
+  path: '/v1/drivers/{driver_name}/vendor_passthru?method=test'
+  method: post
+  headers: *admin_headers
+  assert_status: 404
+  deprecated: true
+
+drivers_vendor_passthru_post_member:
+  path: '/v1/drivers/{driver_name}/vendor_passthru?method=test'
+  method: post
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+drivers_vendor_passthru_post_observer:
+  path: '/v1/drivers/{driver_name}/vendor_passthru?method=test'
+  method: post
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+drivers_vendor_passthru_put_admin:
+  path: '/v1/drivers/{driver_name}/vendor_passthru?method=test'
+  method: put
+  headers: *admin_headers
+  assert_status: 404
+  deprecated: true
+
+drivers_vendor_passthru_put_member:
+  path: '/v1/drivers/{driver_name}/vendor_passthru?method=test'
+  method: put
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+drivers_vendor_passthru_put_observer:
+  path: '/v1/drivers/{driver_name}/vendor_passthru?method=test'
+  method: put
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+# NOTE(TheJulia): Returns an error due to the driver name
+# not matching, but this should be pass policy checking.
+# "No conductors registered."
+drivers_vendor_passthru_delete_admin:
+  path: '/v1/drivers/{driver_name}/vendor_passthru?method=test'
+  method: delete
+  headers: *admin_headers
+  assert_status: 404
+  skip_reason: not updated for scope testing
+
+drivers_vendor_passthru_delete_observer:
+  path: '/v1/drivers/{driver_name}/vendor_passthru?method=test'
+  method: delete
+  headers: *member_headers
+  assert_status: 403
+  skip_reason: not updated for scope testing
+
+drivers_vendor_passthru_delete_observer:
+  path: '/v1/drivers/{driver_name}/vendor_passthru?method=test'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  skip_reason: not updated for scope testing
+
+# Node Bios - https://docs.openstack.org/api-ref/baremetal/#node-bios-nodes
+
+nodes_bios_get_admin:
+  path: '/v1/nodes/{node_ident}/bios'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_bios_get_member:
+  path: '/v1/nodes/{node_ident}/bios'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_bios_get_observer:
+  path: '/v1/nodes/{node_ident}/bios'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_bios_bios_setting_get_admin:
+  path: '/v1/nodes/{node_ident}/bios/{bios_setting}'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_bios_bios_setting_get_member:
+  path: '/v1/nodes/{node_ident}/bios/{bios_setting}'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_bios_bios_setting_get_observer:
+  path: '/v1/nodes/{node_ident}/bios/{bios_setting}'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+# Conductors - https://docs.openstack.org/api-ref/baremetal/#allocations-allocations
+
+conductors_get_admin:
+  path: '/v1/conductors'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+conductors_get_member:
+  path: '/v1/conductors'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+conductors_get_observer:
+  path: '/v1/conductors'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+conductors_hostname_get_admin:
+  path: '/v1/conductors/{conductor_ident}'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+conductors_hostname_get_member:
+  path: '/v1/conductors/{conductor_ident}'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+conductors_hostname_get_observer:
+  path: '/v1/conductors/{conductor_ident}'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+# Allocations - https://docs.openstack.org/api-ref/baremetal/#allocations-allocations
+
+allocations_post_admin:
+  path: '/v1/allocations'
+  method: post
+  headers: *admin_headers
+  body: &allocation_body
+    resource_class: CUSTOM_TEST
+  assert_status: 503
+  deprecated: true
+
+allocations_post_member:
+  path: '/v1/allocations'
+  method: post
+  headers: *member_headers
+  body: *allocation_body
+  assert_status: 403
+  deprecated: true
+  skip_reason: This endpoint's behavior supports allocation creation as a member with the new Role Based Access Control changes. Thus this test cannot both ensure prior and post-change behavior as it is actually valid moving forward.
+
+allocations_post_observer:
+  path: '/v1/allocations'
+  method: post
+  headers: *observer_headers
+  body: *allocation_body
+  assert_status: 403
+  deprecated: true
+
+allocations_get_admin:
+  path: '/v1/allocations'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+allocations_get_member:
+  path: '/v1/allocations'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+allocations_get_observer:
+  path: '/v1/allocations'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+allocations_allocation_id_get_admin:
+  path: '/v1/allocations/{allocation_ident}'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+allocations_allocation_id_get_member:
+  path: '/v1/allocations/{allocation_ident}'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+allocations_allocation_id_get_observer:
+  path: '/v1/allocations/{allocation_ident}'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+allocations_allocation_id_patch_admin:
+  path: '/v1/allocations/{allocation_ident}'
+  method: patch
+  headers: *admin_headers
+  body: &allocation_patch
+    - op: replace
+      path: /extra
+      value: {'test': 'testing'}
+  assert_status: 200
+  deprecated: true
+
+allocations_allocation_id_patch_member:
+  path: '/v1/allocations/{allocation_ident}'
+  method: patch
+  headers: *member_headers
+  body: *allocation_patch
+  assert_status: 404
+  deprecated: true
+
+allocations_allocation_id_patch_observer:
+  path: '/v1/allocations/{allocation_ident}'
+  method: patch
+  headers: *observer_headers
+  body: *allocation_patch
+  assert_status: 403
+  deprecated: true
+
+allocations_allocation_id_delete_admin:
+  path: '/v1/allocations/{allocation_ident}'
+  method: delete
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+allocations_allocation_id_delete_member:
+  path: '/v1/allocations/{allocation_ident}'
+  method: delete
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+allocations_allocation_id_delete_observer:
+  path: '/v1/allocations/{allocation_ident}'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+# Allocations ( Node level) - https://docs.openstack.org/api-ref/baremetal/#node-allocation-allocations-nodes
+nodes_allocation_get_admin:
+  path: '/v1/nodes/{allocated_node_ident}/allocation'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_allocation_get_member:
+  path: '/v1/nodes/{allocated_node_ident}/allocation'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_allocation_get_observer:
+  path: '/v1/nodes/{allocated_node_ident}/allocation'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+nodes_allocation_delete_admin:
+  path: '/v1/nodes/{allocated_node_ident}/allocation'
+  method: delete
+  headers: *admin_headers
+  assert_status: 503
+  deprecated: true
+
+nodes_allocation_delete_member:
+  path: '/v1/nodes/{allocated_node_ident}/allocation'
+  method: delete
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+nodes_allocation_delete_observer:
+  path: '/v1/nodes/{allocated_node_ident}/allocation'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+# Deploy Templates - https://docs.openstack.org/api-ref/baremetal/#deploy-templates-deploy-templates
+
+deploy_templates_post_admin:
+  path: '/v1/deploy_templates'
+  method: post
+  body: &deploy_template_body
+    name: 'CUSTOM_TEST_TEMPLATE'
+    steps:
+      - interface: 'deploy'
+        step: 'noop'
+        args: {}
+        priority: 0
+  headers: *admin_headers
+  assert_status: 201
+  deprecated: true
+
+deploy_templates_post_member:
+  path: '/v1/deploy_templates'
+  method: post
+  body: *deploy_template_body
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+deploy_templates_post_observer:
+  path: '/v1/deploy_templates'
+  method: post
+  body: *deploy_template_body
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+deploy_templates_get_admin:
+  path: '/v1/deploy_templates'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+deploy_templates_get_member:
+  path: '/v1/deploy_templates'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+deploy_templates_get_observer:
+  path: '/v1/deploy_templates'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+deploy_templates_deploy_template_id_get_admin:
+  path: '/v1/deploy_templates/{deploy_template_ident}'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+deploy_templates_deploy_template_id_get_member:
+  path: '/v1/deploy_templates/{deploy_template_ident}'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+deploy_templates_deploy_template_id_get_observer:
+  path: '/v1/deploy_templates/{deploy_template_ident}'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+deploy_templates_deploy_template_id_patch_admin:
+  path: '/v1/deploy_templates/{deploy_template_ident}'
+  method: patch
+  body: &template_patch
+    - op: replace
+      path: /name
+      value: 'CUSTOM_MAGIC'
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+deploy_templates_deploy_template_id_patch_member:
+  path: '/v1/deploy_templates/{deploy_template_ident}'
+  method: patch
+  body: *template_patch
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+deploy_templates_deploy_template_id_patch_observer:
+  path: '/v1/deploy_templates/{deploy_template_ident}'
+  method: patch
+  body: *template_patch
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+deploy_templates_deploy_template_id_delete_admin:
+  path: '/v1/deploy_templates/{deploy_template_ident}'
+  method: delete
+  headers: *admin_headers
+  assert_status: 204
+  deprecated: true
+
+deploy_templates_deploy_template_id_delete_member:
+  path: '/v1/deploy_templates/{deploy_template_ident}'
+  method: delete
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+deploy_templates_deploy_template_id_delete_observer:
+  path: '/v1/deploy_templates/{deploy_template_ident}'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+# Chassis endpoints - https://docs.openstack.org/api-ref/baremetal/#chassis-chassis
+
+chassis_post_admin:
+  path: '/v1/chassis'
+  method: post
+  headers: *admin_headers
+  body: &chassis_body
+    description: 'test-chassis'
+  assert_status: 201
+  deprecated: true
+
+chassis_post_member:
+  path: '/v1/chassis'
+  method: post
+  headers: *member_headers
+  body: *chassis_body
+  assert_status: 403
+  deprecated: true
+
+chassis_post_observer:
+  path: '/v1/chassis'
+  method: post
+  headers: *observer_headers
+  body: *chassis_body
+  assert_status: 403
+  deprecated: true
+
+chassis_get_admin:
+  path: '/v1/chassis'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+chassis_get_member:
+  path: '/v1/chassis'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+chassis_get_observer:
+  path: '/v1/chassis'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+chassis_detail_get_admin:
+  path: '/v1/chassis/detail'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+chassis_detail_get_member:
+  path: '/v1/chassis/detail'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+chassis_detail_get_observer:
+  path: '/v1/chassis/detail'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+chassis_chassis_id_get_admin:
+  path: '/v1/chassis/{chassis_ident}'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+chassis_chassis_id_get_member:
+  path: '/v1/chassis/{chassis_ident}'
+  method: get
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+chassis_chassis_id_get_observer:
+  path: '/v1/chassis/{chassis_ident}'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+
+chassis_chassis_id_patch_admin:
+  path: '/v1/chassis/{chassis_ident}'
+  method: patch
+  body: &chassis_patch
+    - op: replace
+      path: /description
+      value: meow
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+chassis_chassis_id_patch_member:
+  path: '/v1/chassis/{chassis_ident}'
+  method: patch
+  body: *chassis_patch
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+chassis_chassis_id_patch_observer:
+  path: '/v1/chassis/{chassis_ident}'
+  method: patch
+  body: *chassis_patch
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+chassis_chassis_id_delete_admin:
+  path: '/v1/chassis/{chassis_ident}'
+  method: delete
+  headers: *admin_headers
+  assert_status: 204
+  deprecated: true
+
+chassis_chassis_id_delete_member:
+  path: '/v1/chassis/{chassis_ident}'
+  method: delete
+  headers: *member_headers
+  assert_status: 403
+  deprecated: true
+
+chassis_chassis_id_delete_observer:
+  path: '/v1/chassis/{chassis_ident}'
+  method: delete
+  headers: *observer_headers
+  assert_status: 403
+  deprecated: true
+
+node_history_get_admin:
+  path: '/v1/nodes/{node_ident}/history'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+  assert_list_length:
+    history: 1
+
+node_history_get_member:
+  path: '/v1/nodes/{node_ident}/history'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+node_history_get_observer:
+  path: '/v1/nodes/{node_ident}/history'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true
+  assert_list_length:
+    history: 1
+
+node_history_get_entry_admin:
+  path: '/v1/nodes/{node_ident}/history/{history_ident}'
+  method: get
+  headers: *admin_headers
+  assert_status: 200
+  deprecated: true
+
+node_history_get_entry_member:
+  path: '/v1/nodes/{node_ident}/history/{history_ident}'
+  method: get
+  headers: *member_headers
+  assert_status: 404
+  deprecated: true
+
+node_history_get_entry_observer:
+  path: '/v1/nodes/{node_ident}/history/{history_ident}'
+  method: get
+  headers: *observer_headers
+  assert_status: 200
+  deprecated: true

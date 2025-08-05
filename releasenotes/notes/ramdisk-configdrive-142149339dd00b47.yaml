@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Supports attaching configdrives when doing ``ramdisk`` deploy with the
+    ``redfish-virtual-media`` boot. A configdrive is attached to a free USB
+    slot.

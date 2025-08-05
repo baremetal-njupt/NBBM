@@ -1,0 +1,4 @@
+---
+fixes:
+  - |
+    Adds ``bios_interface`` to the node list and node show api-ref.
